@@ -7,7 +7,7 @@
 int main(void)
 {
    
-    // Èíèöèàëèçèðóåì GLFW
+    // Инициализируем GLFW и конфигурирование 
     if (!glfwInit()) {
         fprintf(stderr, "Îøèáêà ïðè èíèöèàëèçàöèè GLFWn");
         return -1;
@@ -16,7 +16,7 @@ int main(void)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     GLFWWindow* window;
-    // Îòêðûòü îêíî è ñîçäàòü â íåì êîíòåêñò OpenGL
+    // Открыть окно и создать в нем контекст OpenGL
     window = glfwCreateWindow(640, 480, "CMC_computer_graphics", NULL, NULL);
     if (!window)
     {
