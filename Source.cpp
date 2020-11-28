@@ -6,13 +6,16 @@
 
 int main(void)
 {
-    GLFWwindow* window;
-
+   
     // Èíèöèàëèçèðóåì GLFW
     if (!glfwInit()) {
         fprintf(stderr, "Îøèáêà ïðè èíèöèàëèçàöèè GLFWn");
         return -1;
     }
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    GLFWWindow* window;
     // Îòêðûòü îêíî è ñîçäàòü â íåì êîíòåêñò OpenGL
     window = glfwCreateWindow(640, 480, "CMC_computer_graphics", NULL, NULL);
     if (!window)
@@ -23,9 +26,23 @@ int main(void)
     }
 
     glfwMakeContextCurrent(window);
-    glRotatef(30.0f, 1.0f, 1.0f, 1.0f);
+     // glad: загрузка указателей на OpenGL функции
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        fprintf(stderr, "Failed to initialize GLAD");
+        return -1;
+    }
+   glViewport(0,0,640,840); 
+   while (!glfwWindowShouldClose(window)) {
+        processInput(window);
+        glClearColor(0.6f, 0.0f, 0.9f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+   }
+    
    
-    while (!glfwWindowShouldClose(window))
+    /*while (!glfwWindowShouldClose(window))
     {
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(0.6f, 0.0f, 0.9f, 1.0f);
@@ -72,7 +89,7 @@ int main(void)
         // Ñáðàñûâàåì áóôåðû
         glfwSwapBuffers(window);
         glfwPollEvents();
-    }
+    } */
 
     glfwTerminate();
     return 0;
