@@ -2,7 +2,10 @@
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
-
+void processInput(GLFWwindow* window) { // обработка событий вводы
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+}
 
 int main(void)
 {
@@ -15,7 +18,7 @@ int main(void)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    GLFWWindow* window;
+    GLFWwindow* window;
     // Открыть окно и создать в нем контекст OpenGL
     window = glfwCreateWindow(640, 480, "CMC_computer_graphics", NULL, NULL);
     if (!window)
