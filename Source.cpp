@@ -2,82 +2,168 @@
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
-void processInput(GLFWwindow* window) { // РѕР±СЂР°Р±РѕС‚РєР° СЃРѕР±С‹С‚РёР№ РІРІРѕРґС‹
+
+void processInput(GLFWwindow* window) { // обработка событий вводы
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 }
+// вершинный шейдер
+const char* vertexShaderSource = "#version 330 core\n"
+"layout (location = 0) in vec3 aPos;\n"
+"void main()\n"
+"{\n"
+"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+"}\0";
+// фрагментный шейдер
+const char* fragmentShaderSource = "#version 330 core\n"
+"out vec4 FragColor;\n"
+"void main()\n"
+"{\n"
+"   FragColor = vec4(0.2f, 0.1f, 0.3f, 0.0f);\n"
+"}\n\0";
 
 int main(void)
 {
-   
-    // РРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј GLFW Рё РєРѕРЅС„РёРіСѓСЂРёСЂРѕРІР°РЅРёРµ 
+    //glfwInit();
+    // Инициализируем GLFW и конфигурирование 
     if (!glfwInit()) {
-        fprintf(stderr, "ГЋГёГЁГЎГЄГ  ГЇГ°ГЁ ГЁГ­ГЁГ¶ГЁГ Г«ГЁГ§Г Г¶ГЁГЁ GLFWn");
+        fprintf(stderr, "Ошибка при инициализации GLFWn");
         return -1;
     }
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     GLFWwindow* window;
-    // РћС‚РєСЂС‹С‚СЊ РѕРєРЅРѕ Рё СЃРѕР·РґР°С‚СЊ РІ РЅРµРј РєРѕРЅС‚РµРєСЃС‚ OpenGL
+
+    // Открыть окно и создать в нем контекст OpenGL
     window = glfwCreateWindow(640, 480, "CMC_computer_graphics", NULL, NULL);
     if (!window)
     {
-        fprintf(stderr,"ГЌГҐГўГ®Г§Г¬Г®Г¦Г­Г® Г®ГІГЄГ°Г»ГІГј Г®ГЄГ­Г®");
+        fprintf(stderr, "Невозможно открыть окно");
         glfwTerminate();
         return -1;
     }
-
     glfwMakeContextCurrent(window);
-     // glad: Р·Р°РіСЂСѓР·РєР° СѓРєР°Р·Р°С‚РµР»РµР№ РЅР° OpenGL С„СѓРЅРєС†РёРё
+    // glad: загрузка указателей на OpenGL функции
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         fprintf(stderr, "Failed to initialize GLAD");
         return -1;
     }
-   glViewport(0,0,640,840); 
-   while (!glfwWindowShouldClose(window)) {
+    glViewport(0, 0, 640, 480);
+    // создадим вершинный шейдер
+    unsigned int vertexShader;
+    vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glCompileShader(vertexShader);
+    // проверка на наличие ошибок
+    int success;
+    char infoLog[512];
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        fprintf(stderr, "ERROR::SHADER::PROGRAM::LINKING_FAILED\n");
+    }
+    // фрагментный шейдер
+    unsigned int fragmentShader;
+    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glCompileShader(fragmentShader);
+    // проверка на наличие ошибок
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+        fprintf(stderr, "ERROR::SHADER::PROGRAM::LINKING_FAILED\n");
+    }
+    // создаем объект шейдерной программы
+    unsigned int shaderProgram;
+    shaderProgram = glCreateProgram();
+    // прикрепляем шейдеры к объекту программы и соединяем
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+    // проверка на наличие ошибок
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        fprintf(stderr, "ERROR::SHADER::PROGRAM::LINKING_FAILED\n");
+    }
+    // удаляем шейдерные объекты
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    float vertices[] = {    // вершины
+        -0.5f, -0.5f, 0.0f, // левая вершина
+         0.5f, -0.5f, 0.0f, // правая вершина
+         0.0f,  0.5f, 0.0f  // верхняя вершина   
+    };
+    unsigned int VBO;
+    glGenBuffers(1, &VBO);
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO);
+
+    // связываем объект вершинного массива
+    glBindVertexArray(VAO);
+    // копируем наш массив вершин в буфер
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    // укаатели вершинных атрибутов
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+
+
+
+    while (!glfwWindowShouldClose(window)) {
         processInput(window);
         glClearColor(0.6f, 0.0f, 0.9f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+        glUseProgram(shaderProgram);
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
         glfwSwapBuffers(window);
         glfwPollEvents();
-   }
-    
-   
-    /*while (!glfwWindowShouldClose(window))
+    }
+    /*
+    while (!glfwWindowShouldClose(window))
     {
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(0.6f, 0.0f, 0.9f, 1.0f);
         glBegin(GL_QUADS);
-       
-        // Г«ГҐГўГ Гї ГЈГ°Г Г­Гј 
+
+        // левая грань
         glColor3f(1.0f, 0.0f, 1.0f);
         glVertex3f(-0.5f, -0.5f, -0.5f);
         glVertex3f(-0.5f, 0.5f, -0.5f);
         glVertex3f(-0.5f, 0.5f, 0.5f);
         glVertex3f(-0.5f, -0.5f, 0.5f);
-        // ГЇГ°Г ГўГ Гї ГЈГ°Г Г­Гј
+        // правая грань
         glVertex3f(0.5f, -0.5f, -0.5f);
         glVertex3f(0.5f, -0.5f, 0.5f);
         glVertex3f(0.5f, 0.5f, 0.5f);
         glVertex3f(0.5f, 0.5f,-0.5f);
-        // Г­ГЁГ¦Г­ГїГї ГЈГ°Г Г­Гј
+        // нижняя грань
         glVertex3f(-0.5f, -0.5f, -0.5f);
         glVertex3f(-0.5f, -0.5f, 0.5f);
         glVertex3f(0.5f, -0.5f, 0.5f);
         glVertex3f(0.5f, -0.5f, -0.5f);
-        // ГўГҐГ°ГµГ­ГїГї ГЈГ°Г Г­Гј
+        // верхняя грань
         glVertex3f(-0.5f, 0.5f, -0.5f);
         glVertex3f(-0.5f, 0.5f, 0.5f);
         glVertex3f(0.5f, 0.5f, 0.5f);
         glVertex3f(0.5f, 0.5f, -0.5f);
-        // Г§Г Г¤Г­ГїГї ГЈГ°Г Г­Гј
+        // задняя грань
         glVertex3f(-0.5f, -0.5f, -0.5f);
         glVertex3f(0.5f, -0.5f, -0.5f);
         glVertex3f(0.5f, 0.5f, -0.5f);
         glVertex3f(-0.5f, 0.5f, -0.5f);
-        // ГЇГҐГ°ГҐГ¤Г­ГїГї ГЈГ°Г Г­Гј        
+        // передняя грань
         glVertex3f(-0.5f, -0.5f, 0.5f);
         glVertex3f(0.5f, -0.5f, 0.5f);
         glVertex3f(0.5f, 0.5f, 0.5f);
@@ -89,11 +175,13 @@ int main(void)
         //glVertex2f(0.5f, -0.5f);
         //glEnd();
 
-        // Г‘ГЎГ°Г Г±Г»ГўГ ГҐГ¬ ГЎГіГґГҐГ°Г»
+        // Сбрасываем буферы
         glfwSwapBuffers(window);
         glfwPollEvents();
     } */
-
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    // завершение,освобождение всех задействованных ресурсов
     glfwTerminate();
     return 0;
 }
