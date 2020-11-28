@@ -1,3 +1,4 @@
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,16 +8,16 @@ int main(void)
 {
     GLFWwindow* window;
 
-    // Инициализируем GLFW
+    // Г€Г­ГЁГ¶ГЁГ Г«ГЁГ§ГЁГ°ГіГҐГ¬ GLFW
     if (!glfwInit()) {
-        fprintf(stderr, "Ошибка при инициализации GLFWn");
+        fprintf(stderr, "ГЋГёГЁГЎГЄГ  ГЇГ°ГЁ ГЁГ­ГЁГ¶ГЁГ Г«ГЁГ§Г Г¶ГЁГЁ GLFWn");
         return -1;
     }
-    // Открыть окно и создать в нем контекст OpenGL
+    // ГЋГІГЄГ°Г»ГІГј Г®ГЄГ­Г® ГЁ Г±Г®Г§Г¤Г ГІГј Гў Г­ГҐГ¬ ГЄГ®Г­ГІГҐГЄГ±ГІ OpenGL
     window = glfwCreateWindow(640, 480, "CMC_computer_graphics", NULL, NULL);
     if (!window)
     {
-        fprintf(stderr,"Невозможно открыть окно");
+        fprintf(stderr,"ГЌГҐГўГ®Г§Г¬Г®Г¦Г­Г® Г®ГІГЄГ°Г»ГІГј Г®ГЄГ­Г®");
         glfwTerminate();
         return -1;
     }
@@ -30,33 +31,33 @@ int main(void)
         glClearColor(0.6f, 0.0f, 0.9f, 1.0f);
         glBegin(GL_QUADS);
        
-        // левая грань 
+        // Г«ГҐГўГ Гї ГЈГ°Г Г­Гј 
         glColor3f(1.0f, 0.0f, 1.0f);
         glVertex3f(-0.5f, -0.5f, -0.5f);
         glVertex3f(-0.5f, 0.5f, -0.5f);
         glVertex3f(-0.5f, 0.5f, 0.5f);
         glVertex3f(-0.5f, -0.5f, 0.5f);
-        // правая грань
+        // ГЇГ°Г ГўГ Гї ГЈГ°Г Г­Гј
         glVertex3f(0.5f, -0.5f, -0.5f);
         glVertex3f(0.5f, -0.5f, 0.5f);
         glVertex3f(0.5f, 0.5f, 0.5f);
         glVertex3f(0.5f, 0.5f,-0.5f);
-        // нижняя грань
+        // Г­ГЁГ¦Г­ГїГї ГЈГ°Г Г­Гј
         glVertex3f(-0.5f, -0.5f, -0.5f);
         glVertex3f(-0.5f, -0.5f, 0.5f);
         glVertex3f(0.5f, -0.5f, 0.5f);
         glVertex3f(0.5f, -0.5f, -0.5f);
-        // верхняя грань
+        // ГўГҐГ°ГµГ­ГїГї ГЈГ°Г Г­Гј
         glVertex3f(-0.5f, 0.5f, -0.5f);
         glVertex3f(-0.5f, 0.5f, 0.5f);
         glVertex3f(0.5f, 0.5f, 0.5f);
         glVertex3f(0.5f, 0.5f, -0.5f);
-        // задняя грань
+        // Г§Г Г¤Г­ГїГї ГЈГ°Г Г­Гј
         glVertex3f(-0.5f, -0.5f, -0.5f);
         glVertex3f(0.5f, -0.5f, -0.5f);
         glVertex3f(0.5f, 0.5f, -0.5f);
         glVertex3f(-0.5f, 0.5f, -0.5f);
-        // передняя грань        
+        // ГЇГҐГ°ГҐГ¤Г­ГїГї ГЈГ°Г Г­Гј        
         glVertex3f(-0.5f, -0.5f, 0.5f);
         glVertex3f(0.5f, -0.5f, 0.5f);
         glVertex3f(0.5f, 0.5f, 0.5f);
@@ -68,7 +69,7 @@ int main(void)
         //glVertex2f(0.5f, -0.5f);
         //glEnd();
 
-        // Сбрасываем буферы
+        // Г‘ГЎГ°Г Г±Г»ГўГ ГҐГ¬ ГЎГіГґГҐГ°Г»
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
