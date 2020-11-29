@@ -1,29 +1,17 @@
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
+#include "shader_s.h"
+
 #include <stdio.h>
 #include <stdlib.h>
+
 
 void processInput(GLFWwindow* window) { // обработка событий вводы
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 }
-// вершинный шейдер
-const char* vertexShaderSource = "#version 330 core\n"
-"layout (location = 0) in vec3 aPos;\n"
-"out vec4 vertexColor;"
-"void main()\n"
-"{\n"
-"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-"   vertexColor = vec4(0.5,0.5,0.5,1.0);\n"
-"}\0";
-// фрагментный шейдер
-const char* fragmentShaderSource = "#version 330 core\n"
-"out vec4 FragColor;\n"
-"in vec4 vertexColor;" // передано
-"void main()\n"
-"{\n"
-"   FragColor = vertexColor;\n"
-"}\n\0";
 
 int main(void)
 {
@@ -55,7 +43,7 @@ int main(void)
     }
     glViewport(0, 0, 640, 480);
     // создадим вершинный шейдер
-    unsigned int vertexShader;
+    /*unsigned int vertexShader;
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
     glCompileShader(vertexShader);
@@ -97,17 +85,18 @@ int main(void)
     // удал€ем шейдерные объекты
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
-
+    */
+    Shader myShader("C:/с++/Project1/shader.vs", "C:/с++/Project1/shader.fs");
     float vertices[] = {    // вершины
        0.5f,  0.5f, 0.0f,  // верхн€€ права€
        0.5f, -0.5f, 0.0f,  // нижн€€ права€
        -0.5f, -0.5f, 0.0f,  // нижн€€ лева€
        -0.5f,  0.5f, 0.0f   // верхн€€ лева€  
     };
-    unsigned int indices[] = { // пор€док
+   unsigned int indices[] = { // пор€док
         0,1,3,
         1,2,3
-    };
+    }; 
     unsigned int EBO;
     glGenBuffers(1, &EBO);
     unsigned int VBO;
@@ -135,7 +124,7 @@ int main(void)
         processInput(window);
         glClearColor(0.6f, 0.0f, 0.9f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
-        glUseProgram(shaderProgram);
+        myShader.use();
         glBindVertexArray(VAO);
         //glDrawArrays(GL_TRIANGLES, 0, 3);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
