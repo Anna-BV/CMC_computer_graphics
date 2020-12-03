@@ -1,174 +1,180 @@
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#define GLEW_STATIC
+#include <GLEW/glew.h>
 
-#include "shader_s.h"
-#include "stb_image.h"
-#include <stdio.h>
-#include <stdlib.h>
-const unsigned int our_width = 640;
-const unsigned int out_height = 480;
+#include  <GLFW/glfw3.h>
+#include <string>
+#include <iostream>
+#include <SOIL/SOIL.h>
+#include "shader_h.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
-void processInput(GLFWwindow* window) { // обработка событий вводы
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-}
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+const GLuint NWIDTH = 800, NHEIGHT = 600;
+
 
 int main(void)
 {
-    //glfwInit();
-    // »нициализируем GLFW и конфигурирование 
     if (!glfwInit()) {
-        fprintf(stderr, "ќшибка при инициализации GLFWn");
+        std::cout << "ERROR::INITIALIZATION_GLFW" << std::endl;
         return -1;
     }
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    GLFWwindow* window;
+    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
+    GLFWwindow* window;
     // ќткрыть окно и создать в нем контекст OpenGL
-    window = glfwCreateWindow(our_width,out_height, "CMC_computer_graphics", NULL, NULL);
+    window = glfwCreateWindow(NWIDTH, NHEIGHT, "CMC_computer_graphics", NULL, NULL);
     if (!window)
     {
-        fprintf(stderr, "Ќевозможно открыть окно");
+        std::cout << "ERROR::Failed_create _GLFWwindow" << std::endl;
         glfwTerminate();
         return -1;
     }
     glfwMakeContextCurrent(window);
-    // glad: загрузка указателей на OpenGL функции
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    glfwSetKeyCallback(window, key_callback);
+
+    glewExperimental = GL_TRUE;
+    if (glewInit() != GLEW_OK)
     {
-        fprintf(stderr, "Failed to initialize GLAD");
+        std::cout << "Failed to initialize GLEW" << std::endl;
         return -1;
     }
-    //glViewport(0, 0, 640, 480);
-    // создадим вершинный шейдер
-    /*unsigned int vertexShader;
-    vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-    // проверка на наличие ошибок
-    int success;
-    char infoLog[512];
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        fprintf(stderr, "ERROR::SHADER::PROGRAM::LINKING_FAILED\n");
-    }
-    // фрагментный шейдер
-    unsigned int fragmentShader;
-    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-    // проверка на наличие ошибок
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        fprintf(stderr, "ERROR::SHADER::PROGRAM::LINKING_FAILED\n");
-    }
-    // создаем объект шейдерной программы
-    unsigned int shaderProgram;
-    shaderProgram = glCreateProgram();
-    // прикрепл€ем шейдеры к объекту программы и соедин€ем
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    // проверка на наличие ошибок
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success)
-    {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        fprintf(stderr, "ERROR::SHADER::PROGRAM::LINKING_FAILED\n");
-    }
-    // удал€ем шейдерные объекты
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-    */
-    Shader myShader("C:/с++/Project1/shader.vs", "C:/с++/Project1/shader.fs");
-    float vertices[] = {    // вершины
-       0.5f,  0.5f, 0.0f,   1.0f,0.0f,0.0f,    1.0f,1.0f,        // верхн€€ права€
-       0.5f, -0.5f, 0.0f,   0.0f,1.0f,0.0f,    1.0f,0.0f,        // нижн€€ права€
-      -0.5f, -0.5f, 0.0f,   0.0f,0.0f,1.0f,    0.0f,0.0f,         // нижн€€ лева€
-      -0.5f,  0.5f, 0.0f,   1.0f,1.0f,0.0f,    0.0f,1.0f         // верхн€€ лева€  
-    };
-   unsigned int indices[] = { // пор€док
-        0,1,3,
-        1,2,3
-    }; 
-    unsigned int EBO;
-    glGenBuffers(1, &EBO);
-    unsigned int VBO;
-    glGenBuffers(1, &VBO);
-    unsigned int VAO;
-    glGenVertexArrays(1, &VAO);
 
+    glViewport(0, 0, NWIDTH, NHEIGHT);
+
+    Shader myShader("vertex_shader.vs", "fragment_shader.vs");
+    GLfloat vertices[] = { // ¬≈–Ў»Ќџ “–≈”√ќЋ№Ќ» ќ¬
+         0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // Top Right
+         0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // Bottom Right
+        -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // Bottom Left
+        -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // Top  
+    };
+    GLuint indices[] = {  // ѕќ–яƒќ  –»—ќ¬јЌ»я
+        0, 1, 3,  // First Triangle
+        1, 2, 3   // Second Triangle
+    };
+
+    GLuint VBO, VAO, EBO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
     // св€зываем объект вершинного массива
     glBindVertexArray(VAO);
-    // копируем наш массив вершин в буфер
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,EBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-    // атрибуты координат
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(0));
-    glEnableVertexAttribArray(0);
-    // атрибуты цвета
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3* sizeof(float)));
-    glEnableVertexAttribArray(1);
-    // атрибуты текстуры
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6*sizeof(float)));
-    glEnableVertexAttribArray(2); 
 
-    
-    
-    // создание идентификатора структуры
-    unsigned int first_texture;
-    glGenTextures(1, &first_texture);
-    // св€зывание текстуры
-    glBindTexture(GL_TEXTURE_2D, first_texture);
-    //устанавливаем параметры наложени€
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-    // параметры фильтрации
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    // Position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
+    // Color attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(1);
+    // TexCoord attribute
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(2);
+
+
+    // glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    GLuint texture1;
+    GLuint texture2;
+
+    glGenTextures(1, &texture1);
+    glBindTexture(GL_TEXTURE_2D, texture1);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    int width, height; // задаем ширину и длину
-    int number_of_channels;
-    unsigned char* pic = stbi_load("C:/с++/Project1/texture/stone_texture.jpg", &width, &height, &number_of_channels, 0);
-    if (pic) {
-            // сгенерируем текстуру
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, pic);
-            // используем мипмап текстуры
-            glGenerateMipmap(GL_TEXTURE_2D);
+
+    int width, height;
+    unsigned char* image = SOIL_load_image("container.jpg", &width, &height, 0, SOIL_LOAD_RGB);
+    if (image) 
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    SOIL_free_image_data(image);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenTextures(1, &texture2);
+    glBindTexture(GL_TEXTURE_2D, texture2);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    image = SOIL_load_image("awesomeface.png", &width, &height, 0, SOIL_LOAD_RGB);
+    if (image)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+        glGenerateMipmap(GL_TEXTURE_2D);
     }
     else {
-        std::cout << "Failed in loading texture" << std::endl;
+        std::cout << "Failed to load texture" << std::endl;
     }
-    // освобождение пам€ти
-    stbi_image_free(pic);
+    SOIL_free_image_data(image);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
-    while (!glfwWindowShouldClose(window)) {
-        processInput(window);
-        glClearColor(0.6f, 0.0f, 0.9f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        glBindTexture(GL_TEXTURE_2D, first_texture);
-
-        myShader.use();
-        glBindVertexArray(VAO);
-        //glDrawArrays(GL_TRIANGLES, 0, 3);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-       
-        glfwSwapBuffers(window);
+    while (!glfwWindowShouldClose(window))
+    {
         glfwPollEvents();
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        myShader.Use();
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture1);
+        glUniform1i(glGetUniformLocation(myShader.Program, "ourTexture1"), 0);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, texture2);
+        glUniform1i(glGetUniformLocation(myShader.Program, "ourTexture2"), 1);
+
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 projection;
+
+        model = glm::rotate(model, -55.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+        projection = glm::perspective(45.0f, GLfloat(NWIDTH) / GLfloat(NHEIGHT), 0.1f, 100.0f);
+        GLint modelLoc = glGetUniformLocation(myShader.Program, "model");
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        GLint viewLoc = glGetUniformLocation(myShader.Program, "view");
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+        GLint projLoc = glGetUniformLocation(myShader.Program, "projection");
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+        glfwSwapBuffers(window);
     }
-    
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
-    // завершение,освобождение всех задействованных ресурсов
     glfwTerminate();
     return 0;
 }
+
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
+{
+    std::cout << key << std::endl;
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GL_TRUE);
+}
+
