@@ -13,7 +13,6 @@
 #include <glm/gtc/type_ptr.hpp>
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
-
 void update_camera();
 void mouse_moving(GLFWwindow* window, double xpos, double ypos);
 void scroll_moving(GLFWwindow* window, double xoffset, double yoffset);
@@ -29,6 +28,8 @@ GLfloat deltaTime = 0.0f;//  ¬рем€, прошедшее между последним и текущим кадром
 
 GLfloat lastX = NWIDTH / 2.0;
 GLfloat lastY = NHEIGHT / 2.0;
+// положение источника света
+glm::vec3 lightPosition(1.2f, 1.0f, 2.0f);
 
 int main(void)
 {
@@ -69,6 +70,7 @@ int main(void)
     glEnable(GL_DEPTH_TEST);
 
     Shader myShader("vertex_shader.vs", "fragment_shader.vs");
+    Shader lightShader("light_vertex_shader.vs", "light_fragment_shader.vs");
     /*GLfloat vertices[] = { // ¬≈–Ў»Ќџ “–≈”√ќЋ№Ќ» ќ¬
          0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // Top Right
          0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // Bottom Right
@@ -76,53 +78,48 @@ int main(void)
         -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // Top  
     };*/
     GLfloat vertices[] = {
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  
+     0.5f, -0.5f, -0.5f, 
+     0.5f,  0.5f, -0.5f,  
+     0.5f,  0.5f, -0.5f,  
+    -0.5f,  0.5f, -0.5f,  
+    -0.5f, -0.5f, -0.5f,  
 
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  
+     0.5f, -0.5f,  0.5f,  
+     0.5f,  0.5f,  0.5f,  
+     0.5f,  0.5f,  0.5f,  
+    -0.5f,  0.5f,  0.5f,  
+    -0.5f, -0.5f,  0.5f,  
 
-    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  
+    -0.5f,  0.5f, -0.5f,  
+    -0.5f, -0.5f, -0.5f,  
+    -0.5f, -0.5f, -0.5f, 
+    -0.5f, -0.5f,  0.5f, 
+    -0.5f,  0.5f,  0.5f,  
 
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  
+     0.5f,  0.5f, -0.5f,  
+     0.5f, -0.5f, -0.5f, 
+     0.5f, -0.5f, -0.5f, 
+     0.5f, -0.5f,  0.5f,  
+     0.5f,  0.5f,  0.5f,  
 
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  
+     0.5f, -0.5f, -0.5f,  
+     0.5f, -0.5f,  0.5f,  
+     0.5f, -0.5f,  0.5f,  
+    -0.5f, -0.5f, -0.5f,  
 
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+    -0.5f,  0.5f, -0.5f,  
+     0.5f,  0.5f, -0.5f,  
+     0.5f,  0.5f,  0.5f,  
+     0.5f,  0.5f,  0.5f, 
+    -0.5f,  0.5f,  0.5f, 
+    -0.5f,  0.5f, -0.5f,  
     };
-    glm::vec3 cubePositions[] = {
-            glm::vec3(0.0f,0.0f,0.0f),
-            glm::vec3(2.0f, 5.0f, -15.0f),
-            glm::vec3(-1.5f,-2.2f,-2.5f)
-    };
+    
     // получим позицию камеры  !!! этот вектор фактически указывает в сторону, противоположную направлению камеры.
     //glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 4.0f);
     // камера нацелена в базовую точку сцены
@@ -141,34 +138,41 @@ int main(void)
         1, 2, 3   // Second Triangle
     };*/
 
-    GLuint VBO, VAO;
-    glGenVertexArrays(1, &VAO);
+    GLuint  VBO,containerVAO;
+    glGenVertexArrays(1, &containerVAO);
     glGenBuffers(1, &VBO);
     //glGenBuffers(1, &EBO);
     // св€зываем объект вершинного массива
-    glBindVertexArray(VAO);
+    
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+   // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
+    glBindVertexArray(containerVAO);
     // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
+    glBindVertexArray(0);
     // Color attribute
     //glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
     //glEnableVertexAttribArray(1);
     // TexCoord attribute
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-    glEnableVertexAttribArray(2);
-
-
-    // glBindBuffer(GL_ARRAY_BUFFER, 0);
+    //glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    //glEnableVertexAttribArray(2);
+    
+    // лампа
+    GLuint lightVAO;
+    glGenVertexArrays(1, &lightVAO);
+    glBindVertexArray(lightVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    // настройка атрибутов
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)(0));
+    glEnableVertexAttribArray(0);
     glBindVertexArray(0);
 
-    GLuint texture1;
+    /*GLuint texture1;
     GLuint texture2;
 
     glGenTextures(1, &texture1);
@@ -213,7 +217,7 @@ int main(void)
         std::cout << "Failed to load texture" << std::endl;
     }
     SOIL_free_image_data(image);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindTexture(GL_TEXTURE_2D, 0); */
 
     while (!glfwWindowShouldClose(window))
     {
@@ -226,54 +230,69 @@ int main(void)
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
-        myShader.Use();
 
-        glActiveTexture(GL_TEXTURE0);
+        myShader.Use();
+        GLint objectColorLoc = glGetUniformLocation(myShader.Program, "objectColor");
+        GLint lightColorLoc = glGetUniformLocation(myShader.Program, "lightColor");
+        glUniform3f(objectColorLoc, 1.0f, 0.5f, 0.31f); // зададим цвет объекта
+        glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f); // зададим цвет источника света
+
+
+        /*glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture1);
         glUniform1i(glGetUniformLocation(myShader.Program, "ourTexture1"), 0);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texture2);
-        glUniform1i(glGetUniformLocation(myShader.Program, "ourTexture2"), 1);
-        
+        glUniform1i(glGetUniformLocation(myShader.Program, "ourTexture2"), 1);*/
+
         //glm::mat4 model;
         //GLfloat Radius = 10.0f;
         //GLfloat cameraXcoord = sin(glfwGetTime()) * Radius; // координаты X и Z - точки, расположенные на круговой траектории
         //GLfloat cameraZcoord = cos(glfwGetTime()) * Radius
         glm::mat4 view;
-        /*view = glm::lookAt(glm::vec3(cameraXcoord, 0.0f, cameraZcoord), // позици€ камеры, вектор направленный вверх. 
-                           glm::vec3(0.0f, 0.0f, 0.0f), // координата цели 
+        /*view = glm::lookAt(glm::vec3(cameraXcoord, 0.0f, cameraZcoord), // позици€ камеры, вектор направленный вверх.
+                           glm::vec3(0.0f, 0.0f, 0.0f), // координата цели
                            glm::vec3(0.0f, 1.0f, 0.0f)); //  вектор направленный вверх. */
         view = camera.GetViewMatrix();
         glm::mat4 projection;
-         //projection = glm::perspective(45.0f, GLfloat(NWIDTH) / GLfloat(NHEIGHT), 0.1f, 100.0f);
-         projection = glm::perspective(camera.Zoom, (GLfloat)NWIDTH / (GLfloat)NHEIGHT, 0.1f, 100.0f);
+        //projection = glm::perspective(45.0f, GLfloat(NWIDTH) / GLfloat(NHEIGHT), 0.1f, 100.0f);
+        projection = glm::perspective(camera.Zoom, (GLfloat)NWIDTH / (GLfloat)NHEIGHT, 0.1f, 100.0f);
+        GLint modelLoc = glGetUniformLocation(lightShader.Program, "model");
+        GLint viewLoc = glGetUniformLocation(lightShader.Program, "view");
+        GLint projLoc = glGetUniformLocation(lightShader.Program, "projection");
 
-        //model = glm::rotate(model,(GLfloat)glfwGetTime()*50.0f, glm::vec3(0.5f, 1.0f, 0.0f));
-        //view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-        GLint modelLoc = glGetUniformLocation(myShader.Program, "model");
-        //glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-        GLint viewLoc = glGetUniformLocation(myShader.Program, "view");
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-        GLint projLoc = glGetUniformLocation(myShader.Program, "projection");
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view)); 
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
-        glBindVertexArray(VAO);
-        for (GLuint i = 0; i < 3; i++) {
-            glm::mat4 model;
-            model = glm::translate(model,cubePositions[i]);
-            GLfloat angle = 20.0f * i;
-            model = glm::rotate(model, angle, glm::vec3(1.0f, 0.3f, 0.5f));
-            //if ((i + 1) % 2 == 1) {
-            //    model = glm::rotate(model, (GLfloat)glfwGetTime() * 50.0f, glm::vec3(0.5f, 1.0f, 0.0f));
-            //}
-            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-            //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
+
+        glBindVertexArray(containerVAO);
+        glm::mat4 model;
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
+
+        lightShader.Use();
+        modelLoc = glGetUniformLocation(lightShader.Program, "model");
+        viewLoc = glGetUniformLocation(lightShader.Program, "view");
+        projLoc = glGetUniformLocation(lightShader.Program, "projection");
+        // Set matrices
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+        model = glm::mat4();
+        model = glm::translate(model, lightPosition);
+        model = glm::scale(model, glm::vec3(0.2f)); // Make it a smaller cube
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        
+        //if ((i + 1) % 2 == 1) {
+        //    model = glm::rotate(model, (GLfloat)glfwGetTime() * 50.0f, glm::vec3(0.5f, 1.0f, 0.0f));
+        //}
+        // рисование куба лампы 
+        glBindVertexArray(lightVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+
         glfwSwapBuffers(window);
     }
-    glDeleteVertexArrays(1, &VAO);
+    glDeleteVertexArrays(1, &containerVAO);
     glDeleteBuffers(1, &VBO);
     //glDeleteBuffers(1, &EBO);
     glfwTerminate();
