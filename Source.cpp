@@ -16,6 +16,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 void update_camera();
 void mouse_moving(GLFWwindow* window, double xpos, double ypos);
 void scroll_moving(GLFWwindow* window, double xoffset, double yoffset);
+void processInput(GLFWwindow* window);
 
 const GLuint NWIDTH = 800, NHEIGHT = 600;
 // camera
@@ -230,6 +231,8 @@ int main(void)
         deltaTime = currentFrame - lastTime;
         lastTime = currentFrame;
 
+        processInput(window);
+  
         glfwPollEvents();
         update_camera();
 
@@ -237,16 +240,26 @@ int main(void)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         myShader.Use();
-        GLint objectColorLoc = glGetUniformLocation(myShader.Program, "objectColor");
-        GLint lightColorLoc = glGetUniformLocation(myShader.Program, "lightColor");
-        GLint lightPosLoc = glGetUniformLocation(myShader.Program, "lightPos");
-        GLint viewPosLoc = glGetUniformLocation(myShader.Program, "viewPos");
+        myShader.setVec3("light.position", lightPos);
+        myShader.setVec3("viewPos", camera.Position);
 
-        glUniform3f(objectColorLoc, 0.5f, 0.5f, 0.31f); // зададим цвет объекта
-        glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f); // зададим цвет источника света
-        glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
-        glUniform3f(viewPosLoc, camera.Position.x, camera.Position.y, camera.Position.z);
+        // light properties
+        glm::vec3 lightColor;
+        lightColor.x = sin(glfwGetTime() * 2.0f);
+        lightColor.y = sin(glfwGetTime() * 0.7f);
+        lightColor.z = sin(glfwGetTime() * 1.3f);
+        glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f); // decrease the influence
+        glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f); // low influence
+        myShader.setVec3("light.ambient", ambientColor);
+        myShader.setVec3("light.diffuse", diffuseColor);
+        myShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
 
+        // material properties
+        myShader.setVec3("material.ambient", 1.0f, 0.5f, 0.31f);
+        myShader.setVec3("material.diffuse", 1.0f, 0.5f, 0.31f);
+        myShader.setVec3("material.specular", 0.5f, 0.5f, 0.5f); // specular lighting doesn't have full effect on this object's material
+        myShader.setFloat("material.shininess", 32.0f);
+        
 
         /*glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture1);
@@ -267,31 +280,27 @@ int main(void)
         glm::mat4 projection;
         //projection = glm::perspective(45.0f, GLfloat(NWIDTH) / GLfloat(NHEIGHT), 0.1f, 100.0f);
         projection = glm::perspective(camera.Zoom, (GLfloat)NWIDTH / (GLfloat)NHEIGHT, 0.1f, 100.0f);
-        GLint modelLoc = glGetUniformLocation(myShader.Program, "model");
-        GLint viewLoc = glGetUniformLocation(myShader.Program, "view");
-        GLint projLoc = glGetUniformLocation(myShader.Program, "projection");
+       
+        myShader.setMat4("projection", projection);
+        myShader.setMat4("view", view);
 
 
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
         glBindVertexArray(containerVAO);
-        glm::mat4 model;
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        glm::mat4 model = glm::mat4(1.0f);
+        myShader.setMat4("model", model); 
+        glBindVertexArray(containerVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
 
         lightShader.Use();
-        modelLoc = glGetUniformLocation(lightShader.Program, "model");
-        viewLoc = glGetUniformLocation(lightShader.Program, "view");
-        projLoc = glGetUniformLocation(lightShader.Program, "projection");
-        // Set matrices
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
-        model = glm::mat4();
+        lightShader.setMat4("projection", projection);
+        lightShader.setMat4("view", view);
+        model = glm::mat4(1.0f);
         model = glm::translate(model, lightPos);
-        model = glm::scale(model, glm::vec3(0.2f)); // Make it a smaller cube
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
+        lightShader.setMat4("model", model);
+
 
         //if ((i + 1) % 2 == 1) {
         //    model = glm::rotate(model, (GLfloat)glfwGetTime() * 50.0f, glm::vec3(0.5f, 1.0f, 0.0f));
@@ -368,4 +377,18 @@ void mouse_moving(GLFWwindow* window, double xpos, double ypos) { // xpos,ypos -
 void scroll_moving(GLFWwindow* window, double xoffset, double yoffset)
 {
     camera.MouseScrolling(yoffset);
+}
+void processInput(GLFWwindow* window)
+{
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        camera.Keyboard(FORWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        camera.Keyboard(BACKWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camera.Keyboard(LEFT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camera.Keyboard(RIGHT, deltaTime);
 }
