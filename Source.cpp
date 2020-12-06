@@ -32,9 +32,8 @@ GLfloat deltaTime = 0.0f;//  Время, прошедшее между последним и текущим кадром
 
 GLfloat lastX = NWIDTH / 2.0;
 GLfloat lastY = NHEIGHT / 2.0;
-// положение источника света
-glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
+glm::vec3 lightPos(1.2f, 1.0f, 2.0f); // 
 int main(void)
 {
     if (!glfwInit()) {
@@ -75,7 +74,7 @@ int main(void)
         return -1;
     } */
 
-    glViewport(0, 0, NWIDTH, NHEIGHT);
+    //glViewport(0, 0, NWIDTH, NHEIGHT);
     glEnable(GL_DEPTH_TEST);
 
     Shader lightShader("light_vertex_shader.vs", "light_fragment_shader.vs"); // замена шейдеров
@@ -133,24 +132,20 @@ int main(void)
     -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
     -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
     };
+    // задаем положения кубов
+    glm::vec3 cubePositions[] = {
+    glm::vec3(0.0f,  0.0f,  0.0f),
+    glm::vec3(2.0f,  5.0f, -15.0f),
+    glm::vec3(-1.5f, -2.2f, -2.5f),
+    glm::vec3(-3.8f, -2.0f, -12.3f),
+    glm::vec3(2.4f, -0.4f, -3.5f),
+    glm::vec3(-1.7f,  3.0f, -7.5f),
+    glm::vec3(1.3f, -2.0f, -2.5f),
+    glm::vec3(1.5f,  2.0f, -2.5f),
+    glm::vec3(1.5f,  0.2f, -1.5f),
+    glm::vec3(-1.3f,  1.0f, -1.5f)
+    };
 
-    // получим позицию камеры  !!! этот вектор фактически указывает в сторону, противоположную направлению камеры.
-    //glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 4.0f);
-    // камера нацелена в базовую точку сцены
-    //glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-    // направление камеры
-    //glm::vec3 cameraDirection = glm::vec3(cameraPosition - cameraTarget);
-    //  вектор указывающий направление вверх 
-    //glm::vec3 upvec = glm::vec3(0.0f, 1.0f, 0.0f);
-    // найдем векторное произведение и получим вектор перпендикулярный  - положительное направление оси Х
-    //glm::vec3 cameraRight = glm::normalize(glm::cross(upvec, cameraDirection));
-    // ось камеры вверх
-    //glm::vec3 cameraUp = glm::normalize(glm::cross(cameraDirection, cameraRight));
-
-    /*GLuint indices[] = {  // ПОРЯДОК РИСОВАНИЯ
-        0, 1, 3,  // First Triangle
-        1, 2, 3   // Second Triangle
-    };*/
 
     GLuint  VBO, containerVAO;
     glGenVertexArrays(1, &containerVAO);
@@ -175,20 +170,23 @@ int main(void)
     // TexCoord attribute
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
     glEnableVertexAttribArray(2);
-    glBindVertexArray(0);
+    //glBindVertexArray(0);
     // лампа
-    GLuint lightVAO;
+    unsigned int lightVAO;
     glGenVertexArrays(1, &lightVAO);
     glBindVertexArray(lightVAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     // настройка атрибутов
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(0));
     glEnableVertexAttribArray(0);
-    glBindVertexArray(0);
+
 
     unsigned int diffuseMap = loadTexture("box.png");
+    unsigned int specularMap = loadTexture("container2_specular.png");
+
     myShader.Use();
     myShader.setInt("material.diffuse", 0);
+    myShader.setInt("material.specular", 1);
     /*GLuint texture1;
     GLuint texture2;
 
@@ -238,14 +236,11 @@ int main(void)
 
     while (!glfwWindowShouldClose(window))
     {
-        GLfloat currentFrame = glfwGetTime();
+        float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastTime;
         lastTime = currentFrame;
 
         processInput(window);
-  
-        glfwPollEvents();
-        update_camera();
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -254,56 +249,49 @@ int main(void)
         myShader.setVec3("light.position", lightPos);
         myShader.setVec3("viewPos", camera.Position);
 
-       
-        glm::vec3 lightColor;
-        lightColor.x = sin(glfwGetTime() * 2.0f);
-        lightColor.y = sin(glfwGetTime() * 0.7f);
-        lightColor.z = sin(glfwGetTime() * 1.3f);
-        glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f); // decrease the influence
-        glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f); // low influence
-        myShader.setVec3("light.ambient", ambientColor);
-        myShader.setVec3("light.diffuse", diffuseColor);
+        myShader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
+        myShader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
         myShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+        myShader.setFloat("light.constant", 1.0f);
+        myShader.setFloat("light.linear", 0.09f);
+        myShader.setFloat("light.quadratic", 0.032f);
 
-        
-        myShader.setVec3("material.ambient", 1.0f, 0.5f, 0.31f);
-        myShader.setVec3("material.diffuse", 1.0f, 0.5f, 0.31f);
-        myShader.setVec3("material.specular", 0.5f, 0.5f, 0.5f); 
-        myShader.setFloat("material.shininess", 32.0f);
-        
-
-        /*glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture1);
-        glUniform1i(glGetUniformLocation(myShader.Program, "ourTexture1"), 0);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, texture2);
-        glUniform1i(glGetUniformLocation(myShader.Program, "ourTexture2"), 1);*/
-
-        //glm::mat4 model;
-        //GLfloat Radius = 10.0f;
-        //GLfloat cameraXcoord = sin(glfwGetTime()) * Radius; // координаты X и Z - точки, расположенные на круговой траектории
-        //GLfloat cameraZcoord = cos(glfwGetTime()) * Radius
+        //myShader.setVec3("material.ambient", 1.0f, 0.5f, 0.31f);
+        //myShader.setVec3("material.diffuse", 1.0f, 0.5f, 0.31f);
+        //myShader.setVec3("material.specular", 0.5f, 0.5f, 0.5f); 
+        myShader.setFloat("material.shininess", 32.0f); // 64 поставим?
         glm::mat4 view;
-        /*view = glm::lookAt(glm::vec3(cameraXcoord, 0.0f, cameraZcoord), // позиция камеры, вектор направленный вверх.
-                           glm::vec3(0.0f, 0.0f, 0.0f), // координата цели
-                           glm::vec3(0.0f, 1.0f, 0.0f)); //  вектор направленный вверх. */
-        view = camera.GetViewMatrix();
         glm::mat4 projection;
-        //projection = glm::perspective(45.0f, GLfloat(NWIDTH) / GLfloat(NHEIGHT), 0.1f, 100.0f);
-        projection = glm::perspective(camera.Zoom, (GLfloat)NWIDTH / (GLfloat)NHEIGHT, 0.1f, 100.0f);
-       
+        projection = glm::perspective(camera.Zoom, (float)NWIDTH / (float)NHEIGHT, 0.1f, 100.0f);
+        view = camera.GetViewMatrix();
         myShader.setMat4("projection", projection);
         myShader.setMat4("view", view);
 
+        glm::mat4 model = glm::mat4(1.0f);
+        myShader.setMat4("model", model);
+
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, diffuseMap);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, specularMap);
 
         glBindVertexArray(containerVAO);
-        glm::mat4 model = glm::mat4(1.0f);
-        myShader.setMat4("model", model); 
-        glBindVertexArray(containerVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        glBindVertexArray(0);
+        for (unsigned int i = 0; i < 10; i++) {
+            /*glm::mat4 view;
+            view = camera.GetViewMatrix();
+            glm::mat4 projection;
+            projection = glm::perspective(camera.Zoom, (GLfloat)NWIDTH / (GLfloat)NHEIGHT, 0.1f, 100.0f); */
+         
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, cubePositions[i]);
+            float angle = 20.0f * i;
+            model = glm::rotate(model,angle, glm::vec3(1.0f, 0.3f, 0.5f));
+
+            myShader.setMat4("model", model);
+            //glBindVertexArray(containerVAO);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+           
+        }
 
         lightShader.Use();
         lightShader.setMat4("projection", projection);
@@ -313,20 +301,16 @@ int main(void)
         model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
         lightShader.setMat4("model", model);
 
-
-        //if ((i + 1) % 2 == 1) {
-        //    model = glm::rotate(model, (GLfloat)glfwGetTime() * 50.0f, glm::vec3(0.5f, 1.0f, 0.0f));
-        //}
-        // рисование куба лампы 
         glBindVertexArray(lightVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
-        glBindVertexArray(0);
+        
 
         glfwSwapBuffers(window);
+        glfwPollEvents();
     }
     glDeleteVertexArrays(1, &containerVAO);
+    glDeleteVertexArrays(1, &lightVAO);
     glDeleteBuffers(1, &VBO);
-    //glDeleteBuffers(1, &EBO);
     glfwTerminate();
     return 0;
 }
@@ -407,14 +391,16 @@ void processInput(GLFWwindow* window)
 
 unsigned int loadTexture(char const* path)
 {
-    unsigned int textureID;
-    glGenTextures(1, &textureID);
 
-    int width, height, nrComponents;
+    // создание идентификатора структуры
+    unsigned int ourtexture;
+    glGenTextures(1, &ourtexture);
+
+    int width, height, nrComponents; 
     unsigned char* data = stbi_load(path, &width, &height, &nrComponents, 0);
     if (data)
     {
-        GLenum format;
+        GLenum format;  // nrComponents  количестве цветовых каналов получившегося изображения
         if (nrComponents == 1)
             format = GL_RED;
         else if (nrComponents == 3)
@@ -422,22 +408,25 @@ unsigned int loadTexture(char const* path)
         else if (nrComponents == 4)
             format = GL_RGBA;
 
-        glBindTexture(GL_TEXTURE_2D, textureID);
+        // связывание текстуры
+        glBindTexture(GL_TEXTURE_2D, ourtexture);
+        // сгенерируем текстуру
         glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        // создаем все необходимые мипмап-уровни дя текстуры
         glGenerateMipmap(GL_TEXTURE_2D);
-
+        //устанавливаем параметры наложения
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        // параметры фильтрации
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        stbi_image_free(data);
+       
     }
     else
     {
         std::cout << "Texture failed to load at path: " << path << std::endl;
-        stbi_image_free(data);
     }
-
-    return textureID;
+    // освобождение памяти
+    stbi_image_free(data);
+    return ourtexture;
 }
