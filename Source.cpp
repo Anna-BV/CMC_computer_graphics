@@ -1,10 +1,12 @@
 #define GLEW_STATIC
-#include <GLEW/glew.h>
-
+//#include <GLEW/glew.h>
+#include <stb_image/stb_image.h>
+#include <GLAD/include/glad/glad.h>
 #include  <GLFW/glfw3.h>
 #include <string>
 #include <iostream>
-#include <SOIL/SOIL.h>
+//#include <SOIL/SOIL.h>
+
 
 #include "shader_h.h"
 #include "camera_h.h"
@@ -17,6 +19,7 @@ void update_camera();
 void mouse_moving(GLFWwindow* window, double xpos, double ypos);
 void scroll_moving(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
+unsigned int loadTexture(const char* path);
 
 const GLuint NWIDTH = 800, NHEIGHT = 600;
 // camera
@@ -59,13 +62,18 @@ int main(void)
     glfwSetScrollCallback(window, scroll_moving);
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
 
-    glewExperimental = GL_TRUE;
+    /*glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK)
     {
         std::cout << "Failed to initialize GLEW" << std::endl;
         return -1;
-    }
+    } */
 
     glViewport(0, 0, NWIDTH, NHEIGHT);
     glEnable(GL_DEPTH_TEST);
@@ -83,47 +91,47 @@ int main(void)
 
     GLfloat vertices[] = {
         // нормали
--0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
--0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
--0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
 
--0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
- 0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
- 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
- 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
--0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
--0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,   0.0f, 0.0f,
 
--0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
--0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
--0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
--0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
--0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
--0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
 
- 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
- 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
- 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
- 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
- 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
- 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f,
 
--0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
- 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
- 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
- 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
--0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
--0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f, 1.0f,
 
--0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
- 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
- 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
- 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
--0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
--0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
     };
 
     // получим позицию камеры  !!! этот вектор фактически указывает в сторону, противоположную направлению камеры.
@@ -158,15 +166,15 @@ int main(void)
      //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     glBindVertexArray(containerVAO);
     // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
 
     // Color attribute
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
     glEnableVertexAttribArray(1);
     // TexCoord attribute
-    //glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-    //glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(2);
     glBindVertexArray(0);
     // лампа
     GLuint lightVAO;
@@ -174,10 +182,13 @@ int main(void)
     glBindVertexArray(lightVAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     // настройка атрибутов
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(0));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(0));
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
 
+    unsigned int diffuseMap = loadTexture("box.png");
+    myShader.Use();
+    myShader.setInt("material.diffuse", 0);
     /*GLuint texture1;
     GLuint texture2;
 
@@ -243,7 +254,7 @@ int main(void)
         myShader.setVec3("light.position", lightPos);
         myShader.setVec3("viewPos", camera.Position);
 
-        // light properties
+       
         glm::vec3 lightColor;
         lightColor.x = sin(glfwGetTime() * 2.0f);
         lightColor.y = sin(glfwGetTime() * 0.7f);
@@ -254,10 +265,10 @@ int main(void)
         myShader.setVec3("light.diffuse", diffuseColor);
         myShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
 
-        // material properties
+        
         myShader.setVec3("material.ambient", 1.0f, 0.5f, 0.31f);
         myShader.setVec3("material.diffuse", 1.0f, 0.5f, 0.31f);
-        myShader.setVec3("material.specular", 0.5f, 0.5f, 0.5f); // specular lighting doesn't have full effect on this object's material
+        myShader.setVec3("material.specular", 0.5f, 0.5f, 0.5f); 
         myShader.setFloat("material.shininess", 32.0f);
         
 
@@ -284,7 +295,8 @@ int main(void)
         myShader.setMat4("projection", projection);
         myShader.setMat4("view", view);
 
-
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, diffuseMap);
 
         glBindVertexArray(containerVAO);
         glm::mat4 model = glm::mat4(1.0f);
@@ -391,4 +403,41 @@ void processInput(GLFWwindow* window)
         camera.Keyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.Keyboard(RIGHT, deltaTime);
+}
+
+unsigned int loadTexture(char const* path)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+
+    int width, height, nrComponents;
+    unsigned char* data = stbi_load(path, &width, &height, &nrComponents, 0);
+    if (data)
+    {
+        GLenum format;
+        if (nrComponents == 1)
+            format = GL_RED;
+        else if (nrComponents == 3)
+            format = GL_RGB;
+        else if (nrComponents == 4)
+            format = GL_RGBA;
+
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        stbi_image_free(data);
+    }
+    else
+    {
+        std::cout << "Texture failed to load at path: " << path << std::endl;
+        stbi_image_free(data);
+    }
+
+    return textureID;
 }
