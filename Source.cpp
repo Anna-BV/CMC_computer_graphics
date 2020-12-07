@@ -21,7 +21,7 @@ void scroll_moving(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 unsigned int loadTexture(const char* path);
 
-const GLuint NWIDTH = 1024, NHEIGHT = 800;
+const GLuint NWIDTH = 800, NHEIGHT = 600;
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 bool keys[1024];
@@ -33,7 +33,7 @@ float deltaTime = 0.0f;//  ¬рем€, прошедшее между последним и текущим кадром
 float lastX = NWIDTH / 2.0;
 float lastY = NHEIGHT / 2.0;
 
-//glm::vec3 lightPos(1.2f, 1.0f, 2.0f); // 
+glm::vec3 lightPos(1.2f, 1.0f, 2.0f); // 
 int main(void)
 {
     if (!glfwInit()) {
@@ -79,7 +79,7 @@ int main(void)
 
     Shader lightShader("light_vertex_shader.vs", "light_fragment_shader.vs"); // замена шейдеров
     //std::cout << "myShader" << std::endl;
-    Shader myShader("vertex_shader.vs", "fragment_shader.vs");
+    Shader myShader("all_light.vs", "all_light.fs");
     //std::cout << "lightShader" << std::endl;
     /*GLfloat vertices[] = { // ¬≈–Ў»Ќџ “–≈”√ќЋ№Ќ» ќ¬
          0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // Top Right
@@ -144,6 +144,10 @@ int main(void)
     glm::vec3(1.5f,  2.0f, -2.5f),
     glm::vec3(1.5f,  0.2f, -1.5f),
     glm::vec3(-1.3f,  1.0f, -1.5f)
+    };
+    glm::vec3 pointLightPositions[] = {
+       glm::vec3(0.7f,  0.2f,  2.0f),
+       glm::vec3(2.3f, -3.3f, -4.0f),
     };
 
 
@@ -246,23 +250,44 @@ int main(void)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         myShader.Use();
-        myShader.setVec3("light.position", camera.Position);
-        myShader.setVec3("light.direction", camera.Front);
-        myShader.setFloat("light.cutOff", glm::cos(glm::radians(18.5f))); // косинус, в шейдере мы рассчитываем скал€рное произведение векторов, что возвращает косинус угла между ними.
-        myShader.setFloat("light.outerCutOff", glm::cos(glm::radians(20.5f)));// что возвращает косинус угла между ними.
         myShader.setVec3("viewPos", camera.Position);  
+        myShader.setFloat("material.shininess", 32.0f);
+        // направленный источник
+        myShader.setVec3("directLight.ambient", 0.1f, 0.1f, 0.1f);
+        myShader.setVec3("directLight.diffuse", 0.8f, 0.8f, 0.8f);
+        myShader.setVec3("directLight.specular", 1.0f, 1.0f, 1.0f);
+        myShader.setVec3("directLight.direction", -0.2f, -1.0f, -0.3f);
+        // точечный источник 1
+        myShader.setVec3("pointLight[0].position", pointLightPositions[0]);
+        myShader.setVec3("pointLight[0].ambient", 0.05f, 0.05f, 0.05f);
+        myShader.setVec3("pointLight[0].diffuse", 0.8f, 0.8f, 0.8f);
+        myShader.setVec3("pointLight[0].specular", 1.0f, 1.0f, 1.0f);
+        myShader.setFloat("pointLight[0].constant", 1.0f);
+        myShader.setFloat("pointLight[0].linear", 0.09);
+        myShader.setFloat("pointLight[0].quadratic", 0.032);
+        // точечный источник 2
+        myShader.setVec3("pointLight[1].position", pointLightPositions[1]);
+        myShader.setVec3("pointLight[1].ambient", 0.05f, 0.05f, 0.05f);
+        myShader.setVec3("pointLight[1].diffuse", 0.8f, 0.8f, 0.8f);
+        myShader.setVec3("pointLights[1].specular", 1.0f, 1.0f, 1.0f);
+        myShader.setFloat("pointLight[1].constant", 1.0f);
+        myShader.setFloat("pointLight[1].linear", 0.09);
+        myShader.setFloat("pointLight[1].quadratic", 0.032);
+        
+        // прожектор
+        myShader.setVec3("spotLight.position", camera.Position);
+        myShader.setVec3("spotLight.direction", camera.Front);
+        myShader.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
+        myShader.setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
+        myShader.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
+        myShader.setFloat("spotLight.constant", 1.0f);
+        myShader.setFloat("spotLight.linear", 0.09);
+        myShader.setFloat("spotLight.quadratic", 0.032);
+        myShader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
+        myShader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
 
-        myShader.setVec3("light.ambient", 0.1f, 0.1f, 0.1f);
-        myShader.setVec3("light.diffuse", 0.8f, 0.8f, 0.8f);
-        myShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
-        myShader.setFloat("light.constant", 1.0f);
-        myShader.setFloat("light.linear", 0.09f);
-        myShader.setFloat("light.quadratic", 0.032f);
-
-        //myShader.setVec3("material.ambient", 1.0f, 0.5f, 0.31f);
-        //myShader.setVec3("material.diffuse", 1.0f, 0.5f, 0.31f);
-        //myShader.setVec3("material.specular", 0.5f, 0.5f, 0.5f); 
-        myShader.setFloat("material.shininess", 32.0f); // 64 поставим?
+        
+       
         glm::mat4 view;
         glm::mat4 projection;
         projection = glm::perspective(camera.Zoom, (float)NWIDTH / (float)NHEIGHT, 0.1f, 100.0f);
@@ -280,34 +305,29 @@ int main(void)
 
         glBindVertexArray(containerVAO);
         for (unsigned int i = 0; i < 10; i++) {
-            /*glm::mat4 view;
-            view = camera.GetViewMatrix();
-            glm::mat4 projection;
-            projection = glm::perspective(camera.Zoom, (GLfloat)NWIDTH / (GLfloat)NHEIGHT, 0.1f, 100.0f); */
          
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, cubePositions[i]);
             float angle = 20.0f * i;
             model = glm::rotate(model,angle, glm::vec3(1.0f, 0.3f, 0.5f));
-
             myShader.setMat4("model", model);
             //glBindVertexArray(containerVAO);
             glDrawArrays(GL_TRIANGLES, 0, 36);
            
         }
-        /*
+        
         lightShader.Use();
         lightShader.setMat4("projection", projection);
         lightShader.setMat4("view", view);
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, lightPos);
-        model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
-        lightShader.setMat4("model", model);
-
         glBindVertexArray(lightVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);*/
+        for (int i = 0; i < 2; i++) {
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, pointLightPositions[i]);
+            model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
+            lightShader.setMat4("model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
         
-
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
