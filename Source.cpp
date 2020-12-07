@@ -21,19 +21,19 @@ void scroll_moving(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 unsigned int loadTexture(const char* path);
 
-const GLuint NWIDTH = 800, NHEIGHT = 600;
+const GLuint NWIDTH = 1024, NHEIGHT = 800;
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 bool keys[1024];
 bool firstMouse = true;
 
-GLfloat lastTime = 0.0f; // Время вывода последнего кадра
-GLfloat deltaTime = 0.0f;//  Время, прошедшее между последним и текущим кадром
+float lastTime = 0.0f; // Время вывода последнего кадра
+float deltaTime = 0.0f;//  Время, прошедшее между последним и текущим кадром
 
-GLfloat lastX = NWIDTH / 2.0;
-GLfloat lastY = NHEIGHT / 2.0;
+float lastX = NWIDTH / 2.0;
+float lastY = NHEIGHT / 2.0;
 
-glm::vec3 lightPos(1.2f, 1.0f, 2.0f); // 
+//glm::vec3 lightPos(1.2f, 1.0f, 2.0f); // 
 int main(void)
 {
     if (!glfwInit()) {
@@ -246,11 +246,14 @@ int main(void)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         myShader.Use();
-        myShader.setVec3("light.position", lightPos);
-        myShader.setVec3("viewPos", camera.Position);
+        myShader.setVec3("light.position", camera.Position);
+        myShader.setVec3("light.direction", camera.Front);
+        myShader.setFloat("light.cutOff", glm::cos(glm::radians(18.5f))); // косинус, в шейдере мы рассчитываем скалярное произведение векторов, что возвращает косинус угла между ними.
+        myShader.setFloat("light.outerCutOff", glm::cos(glm::radians(20.5f)));// что возвращает косинус угла между ними.
+        myShader.setVec3("viewPos", camera.Position);  
 
-        myShader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
-        myShader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+        myShader.setVec3("light.ambient", 0.1f, 0.1f, 0.1f);
+        myShader.setVec3("light.diffuse", 0.8f, 0.8f, 0.8f);
         myShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
         myShader.setFloat("light.constant", 1.0f);
         myShader.setFloat("light.linear", 0.09f);
@@ -292,7 +295,7 @@ int main(void)
             glDrawArrays(GL_TRIANGLES, 0, 36);
            
         }
-
+        /*
         lightShader.Use();
         lightShader.setMat4("projection", projection);
         lightShader.setMat4("view", view);
@@ -302,7 +305,7 @@ int main(void)
         lightShader.setMat4("model", model);
 
         glBindVertexArray(lightVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glDrawArrays(GL_TRIANGLES, 0, 36);*/
         
 
         glfwSwapBuffers(window);
