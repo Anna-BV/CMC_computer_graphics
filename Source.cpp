@@ -1,6 +1,8 @@
 #include <GLAD/include/glad/glad.h>
 #include  <GLFW/glfw3.h>
 #include <string>
+#include <vector>
+#include <map>
 #include <iostream>
 #include <stb_image/stb_image.h>
 
@@ -76,12 +78,16 @@ int main(void)
     // GL_KEEP хранящееся в данный момент значение трафарета сохраняется
     // GL_REPLACE трафаретное значение заменяется эталонным значением, установленным функцией glStencilFunc
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+    // включим режим смешивания и выберем его параметры
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // для освещения
-    Shader lightShader("lightcub.vs", "lightcub.fs"); // замена шейдеров
+    Shader lightShader("lightcub.vs", "lightcub.fs");
     Shader myShader("myshader.vs", "myshader.fs");
     Shader shaderColor("vshader.vs", "color.fs");
-
+    Shader bilbordShader("vshader.vs", "bil.fs");
+   
     // куб
     float cubeVertices[] = {
     -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
@@ -136,6 +142,15 @@ int main(void)
         -5.0f, -0.5f, -5.0f,  0.0f, 1.0f, 0.0f,   0.0f,  1.0f,
          5.0f, -0.5f, -5.0f,  0.0f, 1.0f, 0.0f,   1.0f,  1.0f
     };
+    float bilbordsVertices[] = {
+        0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+        0.0f, -0.5f,  0.0f,  0.0f,  1.0f,
+        1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+
+        0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+        1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+        1.0f,  0.5f,  0.0f,  1.0f,  0.0f
+    };
    
     unsigned int  ourcubeVBO, ourcubeVAO;
     glGenVertexArrays(1, &ourcubeVAO);
@@ -169,11 +184,9 @@ int main(void)
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-    // Texture attribute
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
     glBindVertexArray(0);
-
 
     // лампа
     unsigned int lightVAO;
@@ -184,6 +197,24 @@ int main(void)
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(0));
     glEnableVertexAttribArray(0);
 
+    unsigned int bilbordVAO, bilbordVBO;
+    glGenVertexArrays(1, &bilbordVAO);
+    glGenBuffers(1, &bilbordVBO);
+    glBindVertexArray(bilbordVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, bilbordVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(bilbordsVertices), &bilbordsVertices, GL_STATIC_DRAW);
+ 
+    
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
+
+    
+
     // загрузка текстур
     // куб
     unsigned int diffuseMap = loadTexture("serebro.jpg");
@@ -191,20 +222,42 @@ int main(void)
     // пол
     unsigned int diffFloorTexture = loadTexture("earth.jpg");
     unsigned int specFloorTexture = loadTexture("specular_earth.jpg");
-
+    // билборд
+    unsigned int bilbordTexture = loadTexture("pam.png");
+    
+    
 
     myShader.Use();
     myShader.setInt("material.diffuse", 0);
     myShader.setInt("material.specular", 1);
 
+    std::vector<glm::vec3> windows
+    {
+            glm::vec3(-1.5f, 0.0f, -0.48f),
+            glm::vec3(1.5f, 0.0f, 0.51f),
+            glm::vec3(0.0f, 0.0f, 0.7f),
+            glm::vec3(-0.3f, 0.0f, -2.3f),
+            glm::vec3(0.5f, 0.0f, -0.6f)
+    };
+    
+
     while (!glfwWindowShouldClose(window))
     {
+        glfwPollEvents();
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastTime;
         lastTime = currentFrame;
 
         processInput(window);
-
+        // для корректной работы смешивания при рендере начинаем объектов вывод с дальнего
+        // упорядочивание на основе дистанции от объекта до наблюдателя
+        std::map<float, glm::vec3> sorted;
+        for (unsigned int i = 0; i < windows.size(); i++)
+        {
+            float distance = glm::length(camera.Position - windows[i]);
+            sorted[distance] = windows[i];
+        }
+       
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
@@ -285,6 +338,8 @@ int main(void)
         glStencilFunc(GL_ALWAYS, 0, 0xFF);
         glEnable(GL_DEPTH_TEST);
         
+        
+
         // источник света
         lightShader.Use();
         lightShader.setMat4("projection", projection);
@@ -295,9 +350,26 @@ int main(void)
         lightShader.setMat4("model", model);
         glBindVertexArray(lightVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
-       
+
+        bilbordShader.Use();
+        projection = glm::perspective(camera.Zoom, (float)NWIDTH / (float)NHEIGHT, 0.1f, 100.0f);
+        view = camera.GetViewMatrix();
+        bilbordShader.setMat4("view", view);
+        bilbordShader.setMat4("projection", projection);
+        model = glm::mat4(1.0f);
+        
+        glBindVertexArray(bilbordVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, bilbordTexture);
+        for (std::map<float, glm::vec3>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it)
+        {
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, it->second);
+            bilbordShader.setMat4("model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
         glfwSwapBuffers(window);
-        glfwPollEvents();
+        //glfwPollEvents();
     }
     glDeleteVertexArrays(1, &ourcubeVAO);
     glDeleteBuffers(1, &ourcubeVBO);
