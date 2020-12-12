@@ -88,6 +88,8 @@ int main(void)
     Shader shaderColor("vshader.vs", "color.fs");
     Shader bilbordShader("vshader.vs", "bil.fs");
     Shader skyboxShader("skybox.vs", "skybox.fs");
+    Shader mirrorCubeShader("mirrorCube.vs", "mirrorCube.fs");
+
     // куб
     float cubeVertices[] = {
     -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
@@ -131,6 +133,50 @@ int main(void)
      0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
     -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
     -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
+    };
+    // для куба с зеркальными гранями
+    float mirrorCubeVertices[] = {
+        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+
+        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+
+        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+
+         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+
+        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+
+        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
     };
     // пол
     float floorVertices[] = {
@@ -264,6 +310,19 @@ int main(void)
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
+    unsigned int mirrorCubeVAO, mirrorCubeVBO;
+    glGenVertexArrays(1, &mirrorCubeVAO);
+    glGenBuffers(1, &mirrorCubeVBO);
+    glBindVertexArray(mirrorCubeVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, mirrorCubeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(mirrorCubeVertices), &mirrorCubeVertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
     // текстуры для нашего skybox
     std::vector<std::string> skyboxTextures
     {
@@ -290,13 +349,16 @@ int main(void)
     myShader.setInt("material.diffuse", 0);
     myShader.setInt("material.specular", 1);
 
+    mirrorCubeShader.Use();
+    mirrorCubeShader.setInt("skybox", 0);
+
     skyboxShader.Use();
     skyboxShader.setInt("skybox", 0);
 
     std::vector<glm::vec3> windows
     {
-            glm::vec3(-1.5f, 0.0f, -0.48f),
-            glm::vec3(1.5f, 0.0f, 0.51f),
+            glm::vec3(-1.5f, 0.0f, -0.3f),
+            //glm::vec3(1.5f, 0.0f, 0.51f),
             glm::vec3(0.0f, 0.0f, 0.7f),
             glm::vec3(-0.3f, 0.0f, -2.3f),
             glm::vec3(0.5f, 0.0f, -0.6f)
@@ -409,11 +471,29 @@ int main(void)
         lightShader.setMat4("model", model);
         glBindVertexArray(lightVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
+//----------зеркальные--грани--------------------------------------------------------------------------------------
+       
+        mirrorCubeShader.Use();
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(10.0f, 3.0f, 0.0f));
+        view = camera.GetViewMatrix();
+        projection = glm::perspective(camera.Zoom, (float)NWIDTH / (float)NHEIGHT, 0.1f, 100.0f);
+        mirrorCubeShader.setMat4("model", model);
+        mirrorCubeShader.setMat4("view", view);
+        mirrorCubeShader.setMat4("projection", projection);
+        mirrorCubeShader.setVec3("cameraPos", camera.Position);
+        // cubes
+        glBindVertexArray(mirrorCubeVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
 
+//---------------------skybox--------------------------------------------------------------------------------------------
         // рисуем skybox 
         glDepthFunc(GL_LEQUAL);  // фрагмент проходит тест, если его значение глубины меньше либо равно хранимому в буфере
         skyboxShader.Use();
-        view = glm::mat4(glm::mat3(camera.GetViewMatrix())); // remove translation from the view matrix
+        view = glm::mat4(glm::mat3(camera.GetViewMatrix())); 
         skyboxShader.setMat4("view", view);
         skyboxShader.setMat4("projection", projection);
         
@@ -423,7 +503,7 @@ int main(void)
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
         glDepthFunc(GL_LESS);
-
+//-------полупрозрачный---объект--------------------------------------------------------------------
         bilbordShader.Use();
         projection = glm::perspective(camera.Zoom, (float)NWIDTH / (float)NHEIGHT, 0.1f, 100.0f);
         view = camera.GetViewMatrix();
