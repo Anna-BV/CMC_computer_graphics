@@ -1,0 +1,110 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Исходные файлы">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Файлы заголовков">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Файлы ресурсов">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Исходные файлы\NewFilter1">
+      <UniqueIdentifier>{d9581280-8436-4adb-9f78-f3e29b6c2dd8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Project1\glad.c">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="shader_h.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="..\OpenGllibs\include\SOIL\SOIL.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="camera_h.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="fragment_shader.vs.vs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="fragment_shader.vs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="all_light.fs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="all_light.vs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="model.vs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="model.fs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="1.fs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="color.fs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="vshader.vs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="lightcub.vs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="lightcub.fs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="myshader.fs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="myshader.vs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="bil.fs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="bil.vs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="skybox.vs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="skybox.fs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="mirrorCube.fs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="mirrorCube.vs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="NormalMap.fs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="NormalMap.vs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="ParallaxMap.fs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+    <None Include="ParallaxMap.vs">
+      <Filter>Исходные файлы</Filter>
+    </None>
+  </ItemGroup>
+</Project>

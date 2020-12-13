@@ -1,0 +1,28 @@
+﻿  Source.cpp
+  GLM: rotate function taking degrees as a parameter is deprecated. #define GLM_FORCE_RADIANS before including GLM headers to remove this message.
+  GLM: rotate_slow function taking degrees as a parameter is deprecated. #define GLM_FORCE_RADIANS before including GLM headers to remove this message.
+  GLM: perspective function taking degrees as a parameter is deprecated. #define GLM_FORCE_RADIANS before including GLM headers to remove this message.
+  GLM: perspectiveFov function taking degrees as a parameter is deprecated. #define GLM_FORCE_RADIANS before including GLM headers to remove this message.
+  GLM: infinitePerspective function taking degrees as a parameter is deprecated. #define GLM_FORCE_RADIANS before including GLM headers to remove this message.
+  GLM: tweakedInfinitePerspective function taking degrees as a parameter is deprecated. #define GLM_FORCE_RADIANS before including GLM headers to remove this message.
+  GLM: rotate function taking degrees as a parameter is deprecated. #define GLM_FORCE_RADIANS before including GLM headers to remove this message.
+  GLM: roll function returning degrees is deprecated. #define GLM_FORCE_RADIANS before including GLM headers to remove this message.
+  GLM: pitch function returning degrees is deprecated. #define GLM_FORCE_RADIANS before including GLM headers to remove this message.
+  GLM: yaw function returning degrees is deprecated. #define GLM_FORCE_RADIANS before including GLM headers to remove this message.
+  GLM: angle function returning degrees is deprecated. #define GLM_FORCE_RADIANS before including GLM headers to remove this message.
+  GLM: angleAxis function taking degrees as a parameter is deprecated. #define GLM_FORCE_RADIANS before including GLM headers to remove this message.
+C:\с++\Anna\Source.cpp(37,24): warning C4305: инициализация: усечение из "double" в "float"
+C:\с++\Anna\Source.cpp(395,28): warning C4244: инициализация: преобразование "double" в "float", возможна потеря данных
+C:\с++\Anna\Source.cpp(536,26): warning C4305: инициализация: усечение из "double" в "float"
+C:\с++\Anna\Source.cpp(653,23): warning C4244: инициализация: преобразование "double" в "float", возможна потеря данных
+C:\с++\Anna\Source.cpp(673,17): warning C4244: =: преобразование "double" в "float", возможна потеря данных
+C:\с++\Anna\Source.cpp(674,17): warning C4244: =: преобразование "double" в "float", возможна потеря данных
+C:\с++\Anna\Source.cpp(678,19): warning C4244: инициализация: преобразование "double" в "float", возможна потеря данных
+C:\с++\Anna\Source.cpp(679,19): warning C4244: инициализация: преобразование "double" в "float", возможна потеря данных
+C:\с++\Anna\Source.cpp(681,13): warning C4244: =: преобразование "double" в "float", возможна потеря данных
+C:\с++\Anna\Source.cpp(682,13): warning C4244: =: преобразование "double" в "float", возможна потеря данных
+C:\с++\Anna\Source.cpp(689,27): warning C4244: аргумент: преобразование "double" в "GLfloat", возможна потеря данных
+  GLM: perspective function taking degrees as a parameter is deprecated. #define GLM_FORCE_RADIANS before including GLM headers to remove this message.
+  GLM: rotate function taking degrees as a parameter is deprecated. #define GLM_FORCE_RADIANS before including GLM headers to remove this message.
+LINK : warning LNK4098: библиотека по умолчанию "MSVCRT" конфликтует с использованием других библиотек; используйте /NODEFAULTLIB:library
+  graphic.vcxproj -> C:\с++\Anna\Debug\graphic.exe
