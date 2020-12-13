@@ -20,9 +20,10 @@ void scroll_moving(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 unsigned int loadTexture(const char* path);
 unsigned int loadCubemap(std::vector<std::string> faces);
+void renderQuad();
 
 const unsigned int NWIDTH = 800, NHEIGHT = 600;
-// camera
+
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 bool keys[1024];
 bool firstMouse = true;
@@ -33,7 +34,10 @@ float deltaTime = 0.0f;//  Время, прошедшее между последним и текущим кадром
 float lastX = NWIDTH / 2.0;
 float lastY = NHEIGHT / 2.0;
 
-glm::vec3 lightPos(1.0f, 1.0f, 0.2f); // 
+float heightScale = 0.1;
+
+
+glm::vec3 lightPos(-3.0f, 1.0f, 8.5f);
 int main(void)
 {
     if (!glfwInit()) {
@@ -89,7 +93,8 @@ int main(void)
     Shader bilbordShader("vshader.vs", "bil.fs");
     Shader skyboxShader("skybox.vs", "skybox.fs");
     Shader mirrorCubeShader("mirrorCube.vs", "mirrorCube.fs");
-
+    Shader normalMapShader("NormalMap.vs", "NormalMap.fs");
+    Shader ParallaxMapShader("ParallaxMap.vs", "ParallaxMap.fs");
     // куб
     float cubeVertices[] = {
     -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
@@ -344,10 +349,28 @@ int main(void)
     unsigned int specFloorTexture = loadTexture("specular_earth.jpg");
     // билборд
     unsigned int bilbordTexture = loadTexture("pam.png");
+    // NormalMap
+    unsigned int diffuseNMap = loadTexture("Bricks.jpg");
+    unsigned int normalNMap = loadTexture("NormalBricks.jpg"); 
+
+    //ParallaxMp
+    unsigned int diffusePMap = loadTexture("gold.jpg");
+    unsigned int normalPMap = loadTexture("ornate-celtic-gold-normal-dx.png");
+    unsigned int heightPMap = loadTexture("ornate-celtic-gold-height.png");
 
     myShader.Use();
     myShader.setInt("material.diffuse", 0);
     myShader.setInt("material.specular", 1);
+
+    normalMapShader.Use();
+    normalMapShader.setInt("diffuseNMap", 0);
+    normalMapShader.setInt("normalNMap", 1);
+
+    ParallaxMapShader.Use();
+    ParallaxMapShader.setInt("diffusePMap", 0);
+    ParallaxMapShader.setInt("normalPMap", 1);
+    ParallaxMapShader.setInt("depthPMap", 2);
+
 
     mirrorCubeShader.Use();
     mirrorCubeShader.setInt("skybox", 0);
@@ -355,41 +378,106 @@ int main(void)
     skyboxShader.Use();
     skyboxShader.setInt("skybox", 0);
 
-    std::vector<glm::vec3> windows
+    bilbordShader.Use();
+    bilbordShader.setInt("texture1", 0);
+
+    std::vector<glm::vec3> bilbords
     {
-            glm::vec3(-1.5f, 0.0f, -0.3f),
-            //glm::vec3(1.5f, 0.0f, 0.51f),
-            glm::vec3(0.0f, 0.0f, 0.7f),
-            glm::vec3(-0.3f, 0.0f, -2.3f),
+            glm::vec3(-1.0f, 0.0f, -0.3f),
+            glm::vec3(0.0f, 0.0f, 0.4f),
+            glm::vec3(-0.2f, 0.0f, -2.3f),
             glm::vec3(0.5f, 0.0f, -0.6f)
     };
     
     while (!glfwWindowShouldClose(window))
     {
-        glfwPollEvents();
+
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastTime;
         lastTime = currentFrame;
 
         processInput(window);
+        glfwPollEvents();
+        update_camera();
+
         // для корректной работы смешивания при рендере начинаем объектов вывод с дальнего
         // упорядочивание на основе дистанции от объекта до наблюдателя
-        std::map<float, glm::vec3> sorted;
-        for (unsigned int i = 0; i < windows.size(); i++)
+        std::map<float, glm::vec3> sortedBilbords;
+        for (unsigned int i = 0; i < bilbords.size(); i++)
         {
-            float distance = glm::length(camera.Position - windows[i]);
-            sorted[distance] = windows[i];
+            float distance = glm::length(camera.Position - bilbords[i]);
+            sortedBilbords[distance] = bilbords[i];
         }
        
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+       
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 projection;
+
+//...............эффект....NormalMap............................................................................
+        projection = glm::perspective(camera.Zoom, (float)NWIDTH / (float)NHEIGHT, 0.1f, 100.0f);
+        view = camera.GetViewMatrix();
+        normalMapShader.Use();
+        normalMapShader.setMat4("projection", projection);
+        normalMapShader.setMat4("view", view);
+        // рендеринг normalMap четырехугольника
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-3.0f, 1.0f, 5.0f));
+        model = glm::rotate(model, (float)glfwGetTime() * -10.0f, glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
+        normalMapShader.setMat4("model", model);
+        normalMapShader.setVec3("viewPos", camera.Position);
+        normalMapShader.setVec3("lightPos", lightPos);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, diffuseNMap);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, normalNMap);
+        renderQuad();
+
+        // рендеринг источника света 
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, lightPos);
+        model = glm::scale(model, glm::vec3(0.1f));
+        normalMapShader.setMat4("model", model);
+        renderQuad(); 
+
+ //.............эффект......ParallexMap..................................................................   
+        projection = glm::perspective(camera.Zoom, (float)NWIDTH / (float)NHEIGHT, 0.1f, 100.0f);
+        view = camera.GetViewMatrix();
+        ParallaxMapShader.Use();
+        ParallaxMapShader.setMat4("projection", projection);
+        ParallaxMapShader.setMat4("view", view);
+        // рендеринг ParallexMap четырехугольника
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(3.0f, 0.6f, 5.0f));
+        ParallaxMapShader.setMat4("model", model);
+        ParallaxMapShader.setVec3("viewPos", camera.Position);
+        ParallaxMapShader.setVec3("lightPos", lightPos);
+        ParallaxMapShader.setFloat("heightScale", heightScale); 
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, diffusePMap);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, normalPMap);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, heightPMap);
+        renderQuad();
+
+        // рендеринг источника света 
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, lightPos);
+        model = glm::scale(model, glm::vec3(0.1f));
+        ParallaxMapShader.setMat4("model", model);
+        renderQuad();
 
         shaderColor.Use();
-        glm::mat4 projection = glm::perspective(camera.Zoom, (float)NWIDTH / (float)NHEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = camera.GetViewMatrix();
+        projection = glm::perspective(camera.Zoom, (float)NWIDTH / (float)NHEIGHT, 0.1f, 100.0f);
+        view = camera.GetViewMatrix();
         shaderColor.setMat4("view", view);
         shaderColor.setMat4("projection", projection);
-        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::mat4(1.0f);
 
         myShader.Use();
         myShader.setMat4("view", view);
@@ -411,7 +499,7 @@ int main(void)
         myShader.setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
         myShader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
         myShader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
- //----------------------- ЭФФЕКТ ОБВОДКИ------------------------------------------------------------
+ //........................ЭФФЕКТ ОБВОДКИ........................................................................
         // проверяем, что буфер трафарета не обновляется во время рисования
         glStencilMask(0x00);
         // рисуем пол
@@ -467,11 +555,12 @@ int main(void)
         lightShader.setMat4("view", view);
         model = glm::mat4(1.0f);
         model = glm::translate(model, lightPos);
-        model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
+        model = glm::scale(model, glm::vec3(0.4f)); // a smaller cube
         lightShader.setMat4("model", model);
         glBindVertexArray(lightVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
-//----------зеркальные--грани--------------------------------------------------------------------------------------
+
+//.............зеркальные......грани....................................................................................
        
         mirrorCubeShader.Use();
         model = glm::mat4(1.0f);
@@ -482,14 +571,14 @@ int main(void)
         mirrorCubeShader.setMat4("view", view);
         mirrorCubeShader.setMat4("projection", projection);
         mirrorCubeShader.setVec3("cameraPos", camera.Position);
-        // cubes
+        
         glBindVertexArray(mirrorCubeVAO);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
 
-//---------------------skybox--------------------------------------------------------------------------------------------
+//....................skybox............................................................................................
         // рисуем skybox 
         glDepthFunc(GL_LEQUAL);  // фрагмент проходит тест, если его значение глубины меньше либо равно хранимому в буфере
         skyboxShader.Use();
@@ -503,7 +592,7 @@ int main(void)
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
         glDepthFunc(GL_LESS);
-//-------полупрозрачный---объект--------------------------------------------------------------------
+//................bilbrords...........................................................................
         bilbordShader.Use();
         projection = glm::perspective(camera.Zoom, (float)NWIDTH / (float)NHEIGHT, 0.1f, 100.0f);
         view = camera.GetViewMatrix();
@@ -514,7 +603,7 @@ int main(void)
         glBindVertexArray(bilbordVAO);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, bilbordTexture);
-        for (std::map<float, glm::vec3>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it)
+        for (std::map<float, glm::vec3>::reverse_iterator it = sortedBilbords.rbegin(); it != sortedBilbords.rend(); ++it)
         {
             model = glm::mat4(1.0f);
             model = glm::translate(model, it->second);
@@ -522,7 +611,7 @@ int main(void)
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
         glfwSwapBuffers(window);
-        //glfwPollEvents();
+   
     }
     glDeleteVertexArrays(1, &ourcubeVAO);
     glDeleteBuffers(1, &ourcubeVBO);
@@ -534,6 +623,8 @@ int main(void)
     glDeleteBuffers(1, &bilbordVBO);
     glDeleteVertexArrays(1, &skyboxVAO);
     glDeleteBuffers(1, &skyboxVBO);
+    glDeleteVertexArrays(1, &mirrorCubeVAO);
+    glDeleteBuffers(1, &mirrorCubeVBO);
     glfwTerminate();
     return 0;
 }
@@ -599,18 +690,44 @@ void scroll_moving(GLFWwindow* window, double xoffset, double yoffset)
 }
 void processInput(GLFWwindow* window)
 {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    switch (GLFW_PRESS)
+    {
+    case GLFW_KEY_ESCAPE:
         glfwSetWindowShouldClose(window, true);
-
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        break;
+    case GLFW_KEY_W:
         camera.Keyboard(FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        break;
+    case GLFW_KEY_S: 
         camera.Keyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        break;
+    case GLFW_KEY_A:
         camera.Keyboard(LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        break;
+    case GLFW_KEY_D:
         camera.Keyboard(RIGHT, deltaTime);
+        break;
+    default:
+        break;
+    }
+ 
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+    {
+        if (heightScale > 0.0f)
+            heightScale -= 0.0005f;
+        else
+            heightScale = 0.0f;
+    }
+    else if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+    {
+        if (heightScale < 1.0f)
+            heightScale += 0.0005f;
+        else
+            heightScale = 1.0f;
+    }
+ 
 }
+
 
 unsigned int loadTexture(char const* path)
 {
@@ -646,7 +763,7 @@ unsigned int loadTexture(char const* path)
 
     }
     else
-    {
+    {  // ошибочка
         std::cout << "Texture failed to load at path: " << path << std::endl;
     }
     // освобождение памяти
@@ -654,32 +771,132 @@ unsigned int loadTexture(char const* path)
     return ourtexture;
 }
 
-unsigned int loadCubemap(std::vector<std::string> faces)
+unsigned int loadCubemap(std::vector<std::string> pictures)
 {
-    unsigned int textureID;
-    glGenTextures(1, &textureID);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+    // связывание текстуры
+    unsigned int ourtexture;
+    glGenTextures(1, &ourtexture);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, ourtexture);
 
     int width, height, nrChannels;
-    for (unsigned int i = 0; i < faces.size(); i++)
+    for (unsigned int i = 0; i < pictures.size(); i++)
     {
-        unsigned char* data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
-        if (data)
+        unsigned char* pic = stbi_load(pictures[i].c_str(), &width, &height, &nrChannels, 0);
+        if (pic)
         {
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-            stbi_image_free(data);
+            // сгенерируем текстуру
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, pic);
         }
         else
-        {
-            std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
-            stbi_image_free(data);
+        {   // ошибочка
+            std::cout << "Cubemap texture failed to load at path: " << pictures[i] << std::endl;
         }
+        stbi_image_free(pic);
     }
+    // настройка режимов текстурной фильтрации и повторения:
+    // GL_TEXTURE_WRAP_R настраивает режим повторения по третьей координате текстуры
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-    return textureID;
+    return ourtexture;
 }
+
+
+unsigned int quadVAO = 0;
+unsigned int quadVBO;
+void renderQuad()
+{
+    if (quadVAO == 0)
+    {
+        // координаты вершин
+        glm::vec3 pos1(-1.0f, 1.0f, 0.0f);
+        glm::vec3 pos2(-1.0f, -1.0f, 0.0f);
+        glm::vec3 pos3(1.0f, -1.0f, 0.0f);
+        glm::vec3 pos4(1.0f, 1.0f, 0.0f);
+        // текстурные координаты
+        glm::vec2 uv1(0.0f, 1.0f);
+        glm::vec2 uv2(0.0f, 0.0f);
+        glm::vec2 uv3(1.0f, 0.0f);
+        glm::vec2 uv4(1.0f, 1.0f);
+        // вектор нормали
+        glm::vec3 nm(0.0f, 0.0f, 1.0f);
+
+        glm::vec3 tangent1, bitangent1;
+        glm::vec3 tangent2, bitangent2;
+ //..........1 треугольник...................................................    
+        // вектора описывающие грани треугольника
+        glm::vec3 edge1 = pos2 - pos1;
+        glm::vec3 edge2 = pos3 - pos1;
+        // вектора описывающие дельты текстурных координат
+        glm::vec2 deltaUV1 = uv2 - uv1;
+        glm::vec2 deltaUV2 = uv3 - uv1;
+        // обозначим знаменатель для удобства
+        float znam = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+        // посчитаем касательную по формуле
+        tangent1.x = znam * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+        tangent1.y = znam * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+        tangent1.z = znam * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+        tangent1 = glm::normalize(tangent1);
+        // посчитаем бикасательную по формуле
+        bitangent1.x = znam * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+        bitangent1.y = znam * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+        bitangent1.z = znam * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+        bitangent1 = glm::normalize(bitangent1);
+ //..........2 треугольник................................................... 
+       // вектора описывающие грани треугольника
+        edge1 = pos3 - pos1;
+        edge2 = pos4 - pos1;
+        // вектора описывающие дельты текстурных координат
+        deltaUV1 = uv3 - uv1;
+        deltaUV2 = uv4 - uv1;
+
+        znam = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+        tangent2.x = znam * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+        tangent2.y = znam * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+        tangent2.z = znam * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+        tangent2 = glm::normalize(tangent2);
+
+        bitangent2.x = znam * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+        bitangent2.y = znam * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+        bitangent2.z = znam * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+        bitangent2 = glm::normalize(bitangent2);
+
+
+        float quadVertices[] = {
+                                    // bitangent
+            pos1.x, pos1.y, pos1.z, nm.x, nm.y, nm.z, uv1.x, uv1.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
+            pos2.x, pos2.y, pos2.z, nm.x, nm.y, nm.z, uv2.x, uv2.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
+            pos3.x, pos3.y, pos3.z, nm.x, nm.y, nm.z, uv3.x, uv3.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
+
+            pos1.x, pos1.y, pos1.z, nm.x, nm.y, nm.z, uv1.x, uv1.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z,
+            pos3.x, pos3.y, pos3.z, nm.x, nm.y, nm.z, uv3.x, uv3.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z,
+            pos4.x, pos4.y, pos4.z, nm.x, nm.y, nm.z, uv4.x, uv4.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z
+        };
+        
+        glGenVertexArrays(1, &quadVAO);
+        glGenBuffers(1, &quadVBO);
+        glBindVertexArray(quadVAO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(6 * sizeof(float)));
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(8 * sizeof(float)));
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(11 * sizeof(float)));
+    }
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+}
+

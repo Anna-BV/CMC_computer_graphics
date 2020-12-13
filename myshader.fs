@@ -28,7 +28,7 @@ struct Light {
 };
 
 in vec3 FragPos;  
-in vec3 Normal;  
+in vec3 outNormal;  
 in vec2 TexCoords;
  
 
@@ -43,7 +43,7 @@ vec3 IsPointLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir);
 
 void main()
 {
-    vec3 norm = normalize(Normal);
+    vec3 norm = normalize(outNormal);
     vec3 viewDir = normalize(viewPos - FragPos); //  вектор направления взгляда 
 
     vec3 result = IsDirLight(dirLight,norm,viewDir);
