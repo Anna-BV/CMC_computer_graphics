@@ -1,4 +1,0 @@
-C:\с++\graphic\Debug\graphic.exe
-C:\с++\graphic\Debug\graphic.pdb
-C:\с++\Anna\Debug\graphic.exe
-C:\с++\Anna\Debug\graphic.pdb
