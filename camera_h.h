@@ -1,8 +1,9 @@
-#pragma once
+#ifndef camera_h
+#define camera_h
 
 #include <vector>
 
-#include <GLEW/glew.h>
+#include <GLAD/include/glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -124,3 +125,4 @@ private:
         this->Up = glm::normalize(glm::cross(this->Right, this->Front));
     }
 };
+#endif
