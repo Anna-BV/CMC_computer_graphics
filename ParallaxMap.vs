@@ -25,10 +25,8 @@ void main()
     TexCoords = TextureCoords;   
     // получим матрицу TBN
     vec3 T = normalize(mat3(model) * Tangent);
-    //vec3 B = normalize(mat3(model) * Bitangent);
+    vec3 B = normalize(mat3(model) * Bitangent);
     vec3 N = normalize(mat3(model) * Normal);
-    T = normalize(T - dot(T, N) * N);
-    vec3 B = cross(N, T);
     mat3 TBN = transpose(mat3(T, B, N));
 
     TangentLightPos = TBN * lightPos;
